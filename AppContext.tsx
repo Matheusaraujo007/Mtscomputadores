@@ -2,6 +2,17 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { Product, Transaction, TransactionStatus, Customer, User, CartItem, Establishment, UserRole, RolePermissions, ServiceOrder, ServiceOrderStatus, CashSession, CashSessionStatus } from './types';
 
+export interface CashEntry {
+  id: string;
+  sessionId: string;
+  type: 'INCOME' | 'EXPENSE' | 'TRANSFER';
+  category: string;
+  description: string;
+  value: number;
+  timestamp: string;
+  method?: string;
+}
+
 interface SystemConfig {
   companyName: string;
   logoUrl?: string;
@@ -21,6 +32,7 @@ interface AppContextType {
   serviceOrders: ServiceOrder[];
   establishments: Establishment[];
   cashSessions: CashSession[];
+  cashEntries: CashEntry[];
   loading: boolean;
   login: (username: string, pass: string) => Promise<boolean>;
   logout: () => void;
@@ -39,6 +51,7 @@ interface AppContextType {
   addEstablishment: (e: Establishment) => Promise<void>;
   deleteEstablishment: (id: string) => Promise<void>;
   saveCashSession: (s: CashSession) => Promise<void>;
+  addCashEntry: (e: CashEntry) => Promise<void>;
   processSale: (items: CartItem[], total: number, method: string, clientId?: string, vendorId?: string, shippingValue?: number, cardDetails?: { installments?: number; authNumber?: string; transactionSku?: string }) => Promise<void>;
   updateStock: (productId: string, quantity: number) => Promise<void>;
   bulkUpdateStock: (adjustments: Record<string, number>) => Promise<void>;
@@ -63,6 +76,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [rolePermissions, setRolePermissions] = useState<Record<UserRole, RolePermissions>>(INITIAL_PERMS);
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
   const [cashSessions, setCashSessions] = useState<CashSession[]>([]);
+  const [cashEntries, setCashEntries] = useState<CashEntry[]>([]);
   const [systemConfig, setSystemConfig] = useState<SystemConfig>({
     companyName: 'Retail Cloud ERP', logoUrl: '', taxRegime: 'Simples Nacional', allowNegativeStock: false, returnPeriodDays: 30
   });
@@ -80,12 +94,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.removeItem(LAST_ACTIVITY_KEY);
   }, []);
 
-  const updateActivity = useCallback(() => {
-    if (currentUser) {
-      localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
-    }
-  }, [currentUser]);
-
   const refreshData = async () => {
     try {
       const responses = await Promise.all([
@@ -96,6 +104,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         fetch('/api/establishments').then(r => r.json()).catch(() => []),
         fetch('/api/service-orders').then(r => r.json()).catch(() => []),
         fetch('/api/cash-sessions').then(r => r.json()).catch(() => []),
+        fetch('/api/cash-entries').then(r => r.json()).catch(() => []),
         fetch('/api/config').then(r => r.ok ? r.json() : null).catch(() => null),
         fetch('/api/permissions').then(r => r.ok ? r.json() : null).catch(() => null)
       ]);
@@ -107,35 +116,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setEstablishments(responses[4]);
       setServiceOrders(responses[5]);
       setCashSessions(responses[6]);
+      setCashEntries(responses[7]);
       
-      if (responses[7]) setSystemConfig(responses[7]);
-      if (responses[8] && Array.isArray(responses[8])) {
+      if (responses[8]) setSystemConfig(responses[8]);
+      if (responses[9] && Array.isArray(responses[9])) {
         const permsMap = { ...INITIAL_PERMS };
-        responses[8].forEach((p: any) => { permsMap[p.role as UserRole] = p.permissions; });
+        responses[9].forEach((p: any) => { permsMap[p.role as UserRole] = p.permissions; });
         setRolePermissions(permsMap);
       }
 
       const savedUser = localStorage.getItem(SESSION_KEY);
-      const lastActivity = localStorage.getItem(LAST_ACTIVITY_KEY);
-      
-      if (savedUser && lastActivity) {
-        const now = Date.now();
-        const inactiveTime = now - parseInt(lastActivity);
-        
-        if (inactiveTime < INACTIVITY_LIMIT) {
-          const parsedUser = JSON.parse(savedUser) as User;
-          const latestUsers = responses[3] as User[];
-          const validUser = latestUsers.find(u => u.id === parsedUser.id && u.password === parsedUser.password && u.active);
-          
-          if (validUser) {
-            setCurrentUser(validUser);
-            updateActivity();
-          } else {
-            logout();
-          }
-        } else {
-          logout();
-        }
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser) as User;
+        const validUser = (responses[3] as User[]).find(u => u.id === parsedUser.id && u.active);
+        if (validUser) setCurrentUser(validUser);
       }
     } catch (error) {
       console.error("Erro na sincronização:", error);
@@ -148,62 +142,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     fetch('/api/init-db').finally(() => refreshData());
   }, []);
 
-  useEffect(() => {
-    const handleGlobalClick = () => updateActivity();
-    window.addEventListener('mousedown', handleGlobalClick);
-    window.addEventListener('keydown', handleGlobalClick);
-
-    const interval = setInterval(() => {
-      const lastActivity = localStorage.getItem(LAST_ACTIVITY_KEY);
-      if (lastActivity && currentUser) {
-        const inactiveTime = Date.now() - parseInt(lastActivity);
-        if (inactiveTime > INACTIVITY_LIMIT) {
-          logout();
-        }
-      }
-    }, 60000);
-
-    return () => {
-      window.removeEventListener('mousedown', handleGlobalClick);
-      window.removeEventListener('keydown', handleGlobalClick);
-      clearInterval(interval);
-    };
-  }, [currentUser, logout, updateActivity]);
-
   const login = async (username: string, pass: string) => {
     const user = users.find(u => u.name.toLowerCase() === username.toLowerCase() && u.password === pass);
     if (user && user.active) {
       setCurrentUser(user);
       localStorage.setItem(SESSION_KEY, JSON.stringify(user));
-      localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
       return true;
     }
     return false;
   };
 
-  const addServiceOrder = async (os: ServiceOrder) => {
-    await fetch('/api/service-orders', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(os)});
-    await refreshData();
-  };
-
-  const updateServiceOrder = async (os: ServiceOrder) => {
-    await addServiceOrder(os);
-  };
-
   const addProduct = async (p: Product) => { await fetch('/api/products', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(p)}); await refreshData(); };
   const addTransaction = async (t: Transaction) => { await fetch('/api/transactions', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(t)}); await refreshData(); };
   const addCustomer = async (c: Customer) => { await fetch('/api/customers', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(c)}); await refreshData(); };
-  const addUser = async (u: User) => { 
-    await fetch('/api/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(u)}); 
-    if (currentUser?.id === u.id) {
-       localStorage.setItem(SESSION_KEY, JSON.stringify(u));
-    }
-    await refreshData(); 
-  };
+  const addUser = async (u: User) => { await fetch('/api/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(u)}); await refreshData(); };
   const addEstablishment = async (e: Establishment) => { await fetch('/api/establishments', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(e)}); await refreshData(); };
+  const addServiceOrder = async (os: ServiceOrder) => { await fetch('/api/service-orders', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(os)}); await refreshData(); };
+  const updateServiceOrder = async (os: ServiceOrder) => { await addServiceOrder(os); };
   
   const saveCashSession = async (s: CashSession) => {
     await fetch('/api/cash-sessions', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(s)});
+    await refreshData();
+  };
+
+  const addCashEntry = async (e: CashEntry) => {
+    await fetch('/api/cash-entries', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(e)});
     await refreshData();
   };
 
@@ -267,17 +230,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
       return Promise.resolve();
     });
-    
     await Promise.all(updates);
     await refreshData();
   };
 
   return (
     <AppContext.Provider value={{ 
-      currentUser, systemConfig, rolePermissions, products, transactions, customers, users, serviceOrders, establishments, cashSessions, loading, login, logout, 
-      /* Fix: Changed void-returning arrow functions to async to satisfy Promise<void> type requirement */
+      currentUser, systemConfig, rolePermissions, products, transactions, customers, users, serviceOrders, establishments, cashSessions, cashEntries, loading, login, logout, 
       addProduct, updateProduct: addProduct, deleteProduct: async (id) => {}, addTransaction, addCustomer, addUser, updateSelf: addUser, addServiceOrder, updateServiceOrder,
-      deleteUser: async (id) => {}, addEstablishment, deleteEstablishment: async (id) => {}, processSale, updateStock: async (id, q) => {}, bulkUpdateStock, refreshData, saveCashSession,
+      deleteUser: async (id) => {}, addEstablishment, deleteEstablishment: async (id) => {}, processSale, updateStock: async (id, q) => {}, bulkUpdateStock, refreshData, saveCashSession, addCashEntry,
       updateConfig: async (conf) => { await fetch('/api/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(conf)}); refreshData(); }, 
       updateRolePermissions: async (role, perms) => { await fetch('/api/permissions', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({role, permissions: perms})}); refreshData(); }
     }}>
