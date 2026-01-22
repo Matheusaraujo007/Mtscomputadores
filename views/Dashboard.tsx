@@ -160,95 +160,101 @@ const Dashboard: React.FC = () => {
   }, [dailyTransactions, users, isAdmin, currentUser]);
 
   return (
-    <div className="p-6 space-y-6 animate-in fade-in duration-700 bg-[#f4f7f9] dark:bg-background-dark min-h-screen">
+    <div className="p-8 space-y-8 animate-in fade-in duration-700 bg-[#f4f7f9] dark:bg-background-dark min-h-screen">
       
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* RESUMO DIÁRIO */}
-        <div className="lg:col-span-3 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
-           <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-3 bg-slate-50/50 dark:bg-slate-800/50">
-              <h4 className="text-[10px] font-black uppercase text-slate-500">
-                {isAdmin ? 'Resumo Global' : `Unidade: ${currentStoreName}`}
+        {/* RESUMO DIÁRIO - DESTAQUE AMPLIADO */}
+        <div className="lg:col-span-4 bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col">
+           <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-4 bg-slate-50/50 dark:bg-slate-800/50">
+              <h4 className="text-xs font-black uppercase text-slate-500 tracking-[0.2em]">
+                {isAdmin ? 'Resumo Global de Vendas' : `Unidade: ${currentStoreName}`}
               </h4>
-              <div className="flex gap-1 bg-slate-200/50 dark:bg-slate-700/50 p-1 rounded-xl">
+              <div className="flex gap-2 bg-slate-200/50 dark:bg-slate-700/50 p-1.5 rounded-2xl">
                  <button 
                   onClick={() => setSelectedPeriod('today')}
-                  className={`flex-1 px-2 py-1.5 text-[9px] font-black rounded-lg uppercase transition-all ${selectedPeriod === 'today' ? 'bg-primary text-white shadow-md' : 'text-slate-500'}`}
+                  className={`flex-1 px-4 py-2 text-[10px] font-black rounded-xl uppercase transition-all ${selectedPeriod === 'today' ? 'bg-primary text-white shadow-lg' : 'text-slate-500'}`}
                  >
                    Hoje
                  </button>
                  <button 
                   onClick={() => setSelectedPeriod('yesterday')}
-                  className={`flex-1 px-2 py-1.5 text-[9px] font-black rounded-lg uppercase transition-all ${selectedPeriod === 'yesterday' ? 'bg-primary text-white shadow-md' : 'text-slate-500'}`}
+                  className={`flex-1 px-4 py-2 text-[10px] font-black rounded-xl uppercase transition-all ${selectedPeriod === 'yesterday' ? 'bg-primary text-white shadow-lg' : 'text-slate-500'}`}
                  >
                    Ontem
                  </button>
                  <button 
                   onClick={() => setSelectedPeriod('beforeYesterday')}
-                  className={`flex-1 px-2 py-1.5 text-[9px] font-black rounded-lg uppercase transition-all ${selectedPeriod === 'beforeYesterday' ? 'bg-primary text-white shadow-md' : 'text-slate-500'}`}
+                  className={`flex-1 px-4 py-2 text-[10px] font-black rounded-xl uppercase transition-all ${selectedPeriod === 'beforeYesterday' ? 'bg-primary text-white shadow-lg' : 'text-slate-500'}`}
                  >
-                   Ant.
+                   Anteontem
                  </button>
               </div>
            </div>
            
-           <div className="p-6 space-y-8 flex-1">
+           <div className="p-8 space-y-10 flex-1">
               <div className="flex justify-between items-start">
                  <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Total {selectedPeriod !== 'today' ? 'no dia' : 'hoje'}</p>
-                    <h2 className="text-3xl font-black text-rose-600 tabular-nums">R$ {dailyMetrics.totalSales.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Faturamento {selectedPeriod !== 'today' ? 'no dia' : 'hoje'}</p>
+                    <h2 className="text-5xl font-black text-primary tabular-nums tracking-tighter">R$ {dailyMetrics.totalSales.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
                  </div>
-                 <div className="text-center">
-                    <p className="text-[8px] font-black text-slate-400 uppercase">Clima</p>
-                    <div className="text-3xl">{getReaction(dailyMetrics.avgTicket).emoji}</div>
+                 <div className="text-center bg-slate-50 dark:bg-slate-800 p-4 rounded-[2rem] shadow-inner">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Clima</p>
+                    <div className="text-4xl">{getReaction(dailyMetrics.avgTicket).emoji}</div>
                  </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-y-6">
-                 <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Qtd. vendas</p>
-                    <p className="text-xl font-black text-slate-800 dark:text-white tabular-nums">{dailyMetrics.qtySales}</p>
+              <div className="grid grid-cols-2 gap-y-10 gap-x-6">
+                 <div className="space-y-1">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Qtd. vendas</p>
+                    <p className="text-3xl font-black text-slate-800 dark:text-white tabular-nums">{dailyMetrics.qtySales}</p>
                  </div>
-                 <div className="text-right">
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Qtd. produtos</p>
-                    <p className="text-xl font-black text-slate-800 dark:text-white tabular-nums">{dailyMetrics.qtyProducts.toLocaleString('pt-BR')}</p>
+                 <div className="text-right space-y-1">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Qtd. produtos</p>
+                    <p className="text-3xl font-black text-slate-800 dark:text-white tabular-nums">{dailyMetrics.qtyProducts.toLocaleString('pt-BR')}</p>
                  </div>
-                 <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Ticket médio</p>
-                    <p className="text-sm font-black text-rose-600 tabular-nums">R$ {dailyMetrics.avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                 <div className="space-y-1">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Ticket médio</p>
+                    <p className="text-xl font-black text-rose-600 tabular-nums">R$ {dailyMetrics.avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                  </div>
-                 <div className="text-right">
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Ipv Médio</p>
-                    <p className="text-sm font-black text-slate-800 dark:text-white tabular-nums">{dailyMetrics.prodsPerSale.toFixed(2)}</p>
+                 <div className="text-right space-y-1">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Ipv Médio</p>
+                    <p className="text-xl font-black text-slate-800 dark:text-white tabular-nums">{dailyMetrics.prodsPerSale.toFixed(2)}</p>
                  </div>
               </div>
 
-              <div className="pt-6 mt-auto border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                 <p className="text-[9px] font-bold text-slate-400 uppercase">Ref: {activeDate}</p>
-                 <span className="text-[8px] font-black text-emerald-500 uppercase animate-pulse">● Live Data</span>
+              <div className="pt-8 mt-auto border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                 <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm text-slate-300">event_note</span>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ref: {activeDate}</p>
+                 </div>
+                 <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest animate-pulse flex items-center gap-1.5">
+                    <span className="size-1.5 bg-emerald-500 rounded-full"></span> Live Data
+                 </span>
               </div>
            </div>
         </div>
 
-        {/* VENDAS POR HORA */}
-        <div className="lg:col-span-9 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-           <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-              <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Fluxo de Vendas - {activeDate}</h4>
-              <div className="flex gap-2">
-                 <span className="material-symbols-outlined text-slate-300 text-lg">timeline</span>
+        {/* VENDAS POR HORA - GRÁFICO MAIOR */}
+        <div className="lg:col-span-8 bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
+           <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+              <h4 className="text-xs font-black uppercase text-slate-500 tracking-[0.3em]">Fluxo de Movimentação Horária</h4>
+              <div className="flex items-center gap-2 text-slate-300">
+                 <span className="text-[10px] font-black uppercase tracking-widest">Tempo Real</span>
+                 <span className="material-symbols-outlined text-lg">query_stats</span>
               </div>
            </div>
-           <div className="p-6 h-[280px]">
+           <div className="p-8 h-[380px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={hourlyData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="hour" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 'bold' }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={(val) => `R$ ${val}`} />
+                  <XAxis dataKey="hour" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: '800' }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: '800' }} tickFormatter={(val) => `R$ ${val}`} dx={-10} />
                   <Tooltip 
                     cursor={{fill: '#f8fafc'}}
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }} 
+                    contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', fontWeight: '900', textTransform: 'uppercase', fontSize: '10px' }} 
                   />
-                  <Bar dataKey="value" radius={[4, 4, 0, 0]} fill="#e11d48">
+                  <Bar dataKey="value" radius={[8, 8, 0, 0]} fill="#136dec" barSize={35}>
                     {hourlyData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.value > 0 ? '#136dec' : '#f1f5f9'} />
                     ))}
@@ -259,29 +265,30 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Ranking e Equipe */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden h-[500px] flex flex-col">
-           <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/30">
-              <h4 className="text-[10px] font-black uppercase text-slate-500">Ranking de Itens em {activeDate}</h4>
+      {/* RANKING E EQUIPE - TEXTOS MAIORES */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden h-[550px] flex flex-col">
+           <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/30">
+              <h4 className="text-xs font-black uppercase text-slate-500 tracking-widest">Ranking de Produtos: Top Saídas</h4>
+              <span className="material-symbols-outlined text-slate-300">trending_up</span>
            </div>
            <div className="overflow-auto flex-1 custom-scrollbar">
               <table className="w-full text-left">
                  <thead className="sticky top-0 bg-white dark:bg-slate-900 z-10 border-b">
-                    <tr className="text-[9px] font-black uppercase text-slate-400">
-                       <th className="px-4 py-4">SKU</th>
-                       <th className="px-4 py-4">Descrição</th>
-                       <th className="px-4 py-4 text-center">Saídas</th>
-                       <th className="px-4 py-4 text-right">Total Bruto</th>
+                    <tr className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                       <th className="px-8 py-6 uppercase">Referência</th>
+                       <th className="px-8 py-6 uppercase">Descrição do Item</th>
+                       <th className="px-8 py-6 text-center uppercase">Qtd.</th>
+                       <th className="px-8 py-6 text-right uppercase">Total Bruto</th>
                     </tr>
                  </thead>
                  <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                     {soldProductsList.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 text-[10px]">
-                         <td className="px-4 py-4 font-mono text-primary font-bold">{item.code}</td>
-                         <td className="px-4 py-4 font-black uppercase text-slate-700 dark:text-slate-200 truncate max-w-[150px]">{item.name}</td>
-                         <td className="px-4 py-4 text-center font-black text-slate-700 dark:text-slate-300 tabular-nums">{item.qty}</td>
-                         <td className="px-4 py-4 text-right font-black text-slate-900 dark:text-white tabular-nums">R$ {item.total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                      <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all">
+                         <td className="px-8 py-6 font-mono text-primary font-black text-xs uppercase">{item.code}</td>
+                         <td className="px-8 py-6 font-black uppercase text-slate-700 dark:text-slate-200 truncate max-w-[220px] text-xs">{item.name}</td>
+                         <td className="px-8 py-6 text-center font-black text-slate-900 dark:text-white tabular-nums text-sm">{item.qty}</td>
+                         <td className="px-8 py-6 text-right font-black text-primary dark:text-primary tabular-nums text-sm">R$ {item.total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                       </tr>
                     ))}
                  </tbody>
@@ -289,29 +296,28 @@ const Dashboard: React.FC = () => {
            </div>
         </div>
 
-        <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden h-[500px] flex flex-col">
-           <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/30">
-              <h4 className="text-[10px] font-black uppercase text-slate-500">Performance da Equipe ({activeDate})</h4>
+        <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden h-[550px] flex flex-col">
+           <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/30">
+              <h4 className="text-xs font-black uppercase text-slate-500 tracking-widest">Performance Consultores</h4>
+              <span className="material-symbols-outlined text-slate-300">groups</span>
            </div>
            <div className="overflow-auto flex-1 custom-scrollbar">
               <table className="w-full text-left">
                  <thead className="sticky top-0 bg-white dark:bg-slate-900 z-10 border-b">
-                    <tr className="text-[8px] font-black uppercase text-slate-400">
-                       <th className="px-3 py-4">Vendedor</th>
-                       <th className="px-2 py-4 text-center">Clima</th>
-                       <th className="px-2 py-4 text-center">Vendas</th>
-                       <th className="px-3 py-4 text-right">Total</th>
-                       <th className="px-3 py-4 text-right">Ticket</th>
+                    <tr className="text-[9px] font-black uppercase text-slate-400 tracking-widest">
+                       <th className="px-6 py-6">Vendedor</th>
+                       <th className="px-4 py-6 text-center">Humor</th>
+                       <th className="px-6 py-6 text-right">Total</th>
+                       <th className="px-6 py-6 text-right">Ticket</th>
                     </tr>
                  </thead>
                  <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                     {vendorPerformance.map((v, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 text-[9px]">
-                         <td className="px-3 py-4 font-black uppercase text-slate-600 dark:text-slate-300 truncate max-w-[70px]">{v.name}</td>
-                         <td className="px-2 py-4 text-center text-lg">{v.reaction.emoji}</td>
-                         <td className="px-2 py-4 text-center text-slate-500 font-bold tabular-nums">{v.qtySales}</td>
-                         <td className="px-3 py-4 text-right font-black text-slate-700 dark:text-slate-200 tabular-nums">R$ {v.total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                         <td className="px-3 py-4 text-right font-black text-rose-600 tabular-nums">R$ {v.ticket.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                      <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all">
+                         <td className="px-6 py-6 font-black uppercase text-slate-800 dark:text-slate-200 truncate max-w-[120px] text-xs">{v.name}</td>
+                         <td className="px-4 py-6 text-center text-3xl drop-shadow-sm">{v.reaction.emoji}</td>
+                         <td className="px-6 py-6 text-right font-black text-slate-900 dark:text-white tabular-nums text-xs">R$ {v.total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                         <td className="px-6 py-6 text-right font-black text-rose-600 tabular-nums text-sm">R$ {v.ticket.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                       </tr>
                     ))}
                  </tbody>
@@ -321,8 +327,8 @@ const Dashboard: React.FC = () => {
       </div>
 
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; }
       `}</style>
     </div>
