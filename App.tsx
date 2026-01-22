@@ -14,6 +14,7 @@ import Balance from './views/Balance';
 import Customers from './views/Customers';
 import ServiceOrders from './views/ServiceOrders';
 import Login from './views/Login';
+import CashMovement from './views/CashMovement';
 
 const AppRoutes: React.FC = () => {
   const { currentUser, loading } = useApp();
@@ -45,6 +46,7 @@ const AppRoutes: React.FC = () => {
     <Routes>
       <Route path="/" element={<Layout><Dashboard /></Layout>} />
       <Route path="/pdv" element={<PDV />} />
+      <Route path="/caixa" element={<Layout><CashMovement /></Layout>} />
       <Route path="/clientes" element={<Layout><Customers /></Layout>} />
       <Route path="/relatorios" element={<Layout><Reports /></Layout>} />
       <Route path="/estoque" element={<Layout><Inventory /></Layout>} />

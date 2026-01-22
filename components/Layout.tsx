@@ -13,7 +13,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isPDV = location.pathname === '/pdv';
   
   const [isStockOpen, setIsStockOpen] = useState(location.pathname.includes('estoque') || location.pathname.includes('balanco'));
-  const [isVendasOpen, setIsVendasOpen] = useState(location.pathname.includes('pdv') || location.pathname.includes('clientes') || location.pathname.includes('relatorios'));
+  const [isVendasOpen, setIsVendasOpen] = useState(location.pathname.includes('pdv') || location.pathname.includes('clientes') || location.pathname.includes('relatorios') || location.pathname.includes('caixa'));
   const [isReportsMenuOpen, setIsReportsMenuOpen] = useState(location.pathname.includes('relatorios'));
   const [isFinancialOpen, setIsFinancialOpen] = useState(location.pathname.includes('entradas') || location.pathname.includes('saidas') || location.pathname.includes('dre'));
   const [isOSOpen, setIsOSOpen] = useState(location.pathname.includes('servicos'));
@@ -77,25 +77,25 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
             )}
 
-            {perms.pdv && <SidebarItem to="/pdv" icon="point_of_sale" label="Frente de Caixa" />}
-
-            {(perms.pdv || perms.customers || perms.reports) && (
-              <div className="flex flex-col">
+            {perms.pdv && (
+               <div className="flex flex-col">
                 <button onClick={() => setIsVendasOpen(!isVendasOpen)} className="flex items-center justify-between px-3 py-2.5 rounded-lg transition-all text-slate-600 dark:text-[#9da8b9] hover:bg-slate-100 dark:hover:bg-slate-800/50">
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-xl">shopping_cart</span>
-                    <span className="text-xs font-black uppercase tracking-widest">Comercial</span>
+                    <span className="text-xs font-black uppercase tracking-widest">Vendas / PDV</span>
                   </div>
                   <span className={`material-symbols-outlined text-sm transition-transform ${isVendasOpen ? 'rotate-180' : ''}`}>expand_more</span>
                 </button>
                 {isVendasOpen && (
                   <div className="flex flex-col ml-9 mt-1 border-l border-slate-100 dark:border-slate-800 gap-1">
+                    <SidebarSubItem to="/caixa" label="Controle de Caixa" />
+                    <SidebarSubItem to="/pdv" label="Frente de Caixa" />
                     {perms.customers && <SidebarSubItem to="/clientes" label="Clientes" />}
                     
                     {perms.reports && (
                       <div className="flex flex-col">
                         <button onClick={() => setIsReportsMenuOpen(!isReportsMenuOpen)} className="flex items-center justify-between px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-primary transition-all">
-                          <span>Vendas (Relatórios)</span>
+                          <span>Relatórios</span>
                           <span className={`material-symbols-outlined text-xs transition-transform ${isReportsMenuOpen ? 'rotate-180' : ''}`}>expand_more</span>
                         </button>
                         {isReportsMenuOpen && (

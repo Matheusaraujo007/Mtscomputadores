@@ -15,6 +15,24 @@ export default async function handler(req: any, res: any) {
     await sql`CREATE TABLE IF NOT EXISTS transactions (id TEXT PRIMARY KEY, date TEXT, due_date TEXT, description TEXT, store TEXT, category TEXT, status TEXT, value NUMERIC, shipping_value NUMERIC DEFAULT 0, type TEXT, method TEXT, client TEXT, client_id TEXT, vendor_id TEXT, items JSONB, installments INTEGER, auth_number TEXT, transaction_sku TEXT)`;
     await sql`CREATE TABLE IF NOT EXISTS customers (id TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT, phone TEXT, birth_date TEXT, cpf_cnpj TEXT, zip_code TEXT, address TEXT, number TEXT, complement TEXT, neighborhood TEXT, city TEXT, state TEXT, notes TEXT)`;
     await sql`CREATE TABLE IF NOT EXISTS service_orders (id TEXT PRIMARY KEY, date TEXT NOT NULL, customer_id TEXT NOT NULL, customer_name TEXT NOT NULL, description TEXT NOT NULL, status TEXT NOT NULL, items JSONB NOT NULL, total_value NUMERIC NOT NULL, technician_name TEXT, expected_date TEXT, store TEXT NOT NULL)`;
+    
+    // Tabela de Sessões de Caixa
+    await sql`CREATE TABLE IF NOT EXISTS cash_sessions (
+      id TEXT PRIMARY KEY, 
+      store_id TEXT NOT NULL, 
+      store_name TEXT, 
+      register_name TEXT NOT NULL, 
+      opening_time TEXT, 
+      opening_operator_id TEXT, 
+      opening_operator_name TEXT, 
+      opening_value NUMERIC, 
+      closing_time TEXT, 
+      closing_operator_id TEXT, 
+      closing_operator_name TEXT, 
+      closing_value NUMERIC, 
+      status TEXT NOT NULL, 
+      price_table TEXT
+    )`;
 
     // Migrações
     try { await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_service BOOLEAN DEFAULT FALSE`; } catch(e) {}

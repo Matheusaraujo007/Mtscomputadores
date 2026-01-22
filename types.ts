@@ -41,6 +41,29 @@ export enum ServiceOrderStatus {
   CANCELLED = 'CANCELADA'
 }
 
+export enum CashSessionStatus {
+  PENDING = 'ABERTURA PENDENTE',
+  OPEN = 'ABERTO',
+  CLOSED = 'FECHADO'
+}
+
+export interface CashSession {
+  id: string;
+  storeId: string;
+  storeName: string;
+  registerName: string; // Ex: Caixa 01
+  openingTime?: string;
+  openingOperatorId?: string;
+  openingOperatorName?: string;
+  openingValue?: number;
+  closingTime?: string;
+  closingOperatorId?: string;
+  closingOperatorName?: string;
+  closingValue?: number;
+  status: CashSessionStatus;
+  priceTable: string; // Ex: Tabela Padrão
+}
+
 export interface ServiceOrder {
   id: string;
   date: string;

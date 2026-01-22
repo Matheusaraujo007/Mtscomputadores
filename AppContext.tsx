@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import { Product, Transaction, TransactionStatus, Customer, User, CartItem, Establishment, UserRole, RolePermissions, ServiceOrder, ServiceOrderStatus } from './types';
+import { Product, Transaction, TransactionStatus, Customer, User, CartItem, Establishment, UserRole, RolePermissions, ServiceOrder, ServiceOrderStatus, CashSession, CashSessionStatus } from './types';
 
 interface SystemConfig {
   companyName: string;
@@ -20,6 +20,7 @@ interface AppContextType {
   users: User[];
   serviceOrders: ServiceOrder[];
   establishments: Establishment[];
+  cashSessions: CashSession[];
   loading: boolean;
   login: (username: string, pass: string) => Promise<boolean>;
   logout: () => void;
@@ -37,6 +38,7 @@ interface AppContextType {
   deleteUser: (id: string) => Promise<void>;
   addEstablishment: (e: Establishment) => Promise<void>;
   deleteEstablishment: (id: string) => Promise<void>;
+  saveCashSession: (s: CashSession) => Promise<void>;
   processSale: (items: CartItem[], total: number, method: string, clientId?: string, vendorId?: string, shippingValue?: number, cardDetails?: { installments?: number; authNumber?: string; transactionSku?: string }) => Promise<void>;
   updateStock: (productId: string, quantity: number) => Promise<void>;
   bulkUpdateStock: (adjustments: Record<string, number>) => Promise<void>;
@@ -60,6 +62,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [rolePermissions, setRolePermissions] = useState<Record<UserRole, RolePermissions>>(INITIAL_PERMS);
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
+  const [cashSessions, setCashSessions] = useState<CashSession[]>([]);
   const [systemConfig, setSystemConfig] = useState<SystemConfig>({
     companyName: 'Retail Cloud ERP', logoUrl: '', taxRegime: 'Simples Nacional', allowNegativeStock: false, returnPeriodDays: 30
   });
@@ -92,6 +95,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         fetch('/api/users').then(r => r.json()).catch(() => []),
         fetch('/api/establishments').then(r => r.json()).catch(() => []),
         fetch('/api/service-orders').then(r => r.json()).catch(() => []),
+        fetch('/api/cash-sessions').then(r => r.json()).catch(() => []),
         fetch('/api/config').then(r => r.ok ? r.json() : null).catch(() => null),
         fetch('/api/permissions').then(r => r.ok ? r.json() : null).catch(() => null)
       ]);
@@ -102,11 +106,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setUsers(responses[3]);
       setEstablishments(responses[4]);
       setServiceOrders(responses[5]);
+      setCashSessions(responses[6]);
       
-      if (responses[6]) setSystemConfig(responses[6]);
-      if (responses[7] && Array.isArray(responses[7])) {
+      if (responses[7]) setSystemConfig(responses[7]);
+      if (responses[8] && Array.isArray(responses[8])) {
         const permsMap = { ...INITIAL_PERMS };
-        responses[7].forEach((p: any) => { permsMap[p.role as UserRole] = p.permissions; });
+        responses[8].forEach((p: any) => { permsMap[p.role as UserRole] = p.permissions; });
         setRolePermissions(permsMap);
       }
 
@@ -196,9 +201,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await refreshData(); 
   };
   const addEstablishment = async (e: Establishment) => { await fetch('/api/establishments', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(e)}); await refreshData(); };
+  
+  const saveCashSession = async (s: CashSession) => {
+    await fetch('/api/cash-sessions', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(s)});
+    await refreshData();
+  };
 
   const processSale = async (items: CartItem[], total: number, method: string, clientId?: string, vendorId?: string, shippingValue: number = 0, cardDetails?: any) => {
-    // OTİMIZAÇÃO: Processa atualizações de estoque em paralelo
     const stockUpdates = items
       .filter(item => {
         const p = products.find(x => x.id === item.id);
@@ -234,7 +243,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       ...cardDetails
     };
 
-    // Executa tudo em paralelo para máxima velocidade
     await Promise.all([
       ...stockUpdates,
       fetch('/api/transactions', { 
@@ -266,9 +274,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   return (
     <AppContext.Provider value={{ 
-      currentUser, systemConfig, rolePermissions, products, transactions, customers, users, serviceOrders, establishments, loading, login, logout, 
-      addProduct, updateProduct: addProduct, deleteProduct: (id) => {}, addTransaction, addCustomer, addUser, updateSelf: addUser, addServiceOrder, updateServiceOrder,
-      deleteUser: (id) => {}, addEstablishment, deleteEstablishment: (id) => {}, processSale, updateStock: (id, q) => {}, bulkUpdateStock, refreshData,
+      currentUser, systemConfig, rolePermissions, products, transactions, customers, users, serviceOrders, establishments, cashSessions, loading, login, logout, 
+      /* Fix: Changed void-returning arrow functions to async to satisfy Promise<void> type requirement */
+      addProduct, updateProduct: addProduct, deleteProduct: async (id) => {}, addTransaction, addCustomer, addUser, updateSelf: addUser, addServiceOrder, updateServiceOrder,
+      deleteUser: async (id) => {}, addEstablishment, deleteEstablishment: async (id) => {}, processSale, updateStock: async (id, q) => {}, bulkUpdateStock, refreshData, saveCashSession,
       updateConfig: async (conf) => { await fetch('/api/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(conf)}); refreshData(); }, 
       updateRolePermissions: async (role, perms) => { await fetch('/api/permissions', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({role, permissions: perms})}); refreshData(); }
     }}>

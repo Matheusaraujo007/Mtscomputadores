@@ -2,15 +2,20 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../AppContext';
 import { useNavigate } from 'react-router-dom';
-import { CartItem, Product, Customer, UserRole, User, ServiceOrder, ServiceOrderStatus, Establishment, TransactionStatus, Transaction } from '../types';
+import { CartItem, Product, Customer, UserRole, User, ServiceOrder, ServiceOrderStatus, Establishment, TransactionStatus, Transaction, CashSessionStatus } from '../types';
 
 const PDV: React.FC = () => {
-  const { products, customers, users, currentUser, processSale, establishments, addServiceOrder, addCustomer, addEstablishment, addUser, transactions, addTransaction, systemConfig, addProduct } = useApp();
+  const { products, customers, users, currentUser, processSale, establishments, addServiceOrder, addCustomer, addEstablishment, addUser, transactions, addTransaction, systemConfig, addProduct, cashSessions } = useApp();
   const navigate = useNavigate();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Todos');
   
+  // Verificação de Caixa Aberto
+  const isCashOpen = useMemo(() => {
+    return cashSessions.some(s => s.storeId === currentUser?.storeId && s.status === CashSessionStatus.OPEN);
+  }, [cashSessions, currentUser]);
+
   // Modais e Menus
   const [showCheckout, setShowCheckout] = useState(false);
   const [showOSModal, setShowOSModal] = useState(false);
@@ -340,6 +345,22 @@ const PDV: React.FC = () => {
     ).slice(0, 5);
   }, [priceInquirySearch, products]);
 
+  if (!isCashOpen) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-slate-100 dark:bg-background-dark p-6">
+        <div className="bg-white dark:bg-slate-900 p-12 rounded-[3.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 text-center max-w-lg space-y-8 animate-in zoom-in-95 duration-500">
+           <div className="size-24 bg-rose-500/10 text-rose-500 rounded-[2rem] flex items-center justify-center mx-auto animate-pulse"><span className="material-symbols-outlined text-5xl">lock</span></div>
+           <h2 className="text-3xl font-black uppercase tracking-tighter">Caixa Fechado</h2>
+           <p className="text-slate-500 font-bold text-sm uppercase leading-relaxed">Para iniciar as operações de venda, é necessário realizar a abertura do movimento diário.</p>
+           <div className="flex flex-col gap-3">
+              <button onClick={() => navigate('/caixa')} className="w-full py-5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">Ir para Abertura de Caixa</button>
+              <button onClick={() => navigate('/')} className="w-full py-5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest transition-all">Voltar ao Início</button>
+           </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col bg-slate-50 dark:bg-background-dark overflow-hidden font-display">
       
@@ -514,6 +535,8 @@ const PDV: React.FC = () => {
         </aside>
       </main>
 
+      {/* ... (Manutenção do restante dos modais originais sem alteração) ... */}
+      
       {/* MODAL CHECKOUT */}
       {showCheckout && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-xl p-4">

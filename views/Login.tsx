@@ -180,11 +180,13 @@ const Login: React.FC = () => {
                 </div>
                 <div className="space-y-1">
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Nova Senha</label>
-                   <input required value={newPassword} onChange={e => setNewPassword(e.target.value)} type="password" underline className="w-full h-14 bg-slate-50 dark:bg-slate-800 rounded-2xl px-6 font-bold border-none" placeholder="••••••••" />
+                   {/* Fix: Removed invalid 'underline' property from input */}
+                   <input required value={newPassword} onChange={e => setNewPassword(e.target.value)} type="password" className="w-full h-14 bg-slate-50 dark:bg-slate-800 rounded-2xl px-6 font-bold border-none" placeholder="••••••••" />
                 </div>
                 <div className="space-y-1">
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Confirmar Nova Senha</label>
-                   <input required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} type="password" underline className="w-full h-14 bg-slate-50 dark:bg-slate-800 rounded-2xl px-6 font-bold border-none" placeholder="••••••••" />
+                   {/* Fix: Removed invalid 'underline' property from input */}
+                   <input required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} type="password" className="w-full h-14 bg-slate-50 dark:bg-slate-800 rounded-2xl px-6 font-bold border-none" placeholder="••••••••" />
                 </div>
                 <button type="submit" className="w-full h-16 bg-primary text-white rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-xl">Alterar Senha Agora</button>
              </form>
