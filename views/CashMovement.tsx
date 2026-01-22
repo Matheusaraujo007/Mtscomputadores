@@ -5,8 +5,7 @@ import { CashSession, CashSessionStatus, UserRole } from '../types';
 import { useNavigate } from 'react-router-dom';
 
 const CashMovement: React.FC = () => {
-  /* Fix: 'isAdmin' is not part of the AppContextType, so we calculate it locally below */
-  const { cashSessions, establishments, currentUser, saveCashSession } = useApp();
+  const { cashSessions, establishments, currentUser, saveCashSession, users } = useApp();
   const navigate = useNavigate();
   const [filter, setFilter] = useState('');
   
@@ -17,14 +16,17 @@ const CashMovement: React.FC = () => {
   const [selectedRegister, setSelectedRegister] = useState('');
 
   const currentStore = establishments.find(e => e.id === currentUser?.storeId);
-  const availableRegisters = ['Caixa 01', 'Caixa 02', 'Terminal Balcão', 'Frente de Loja'];
+
+  // Filtra apenas usuários que são CAIXA para servirem como Terminais
+  const availableCashiers = useMemo(() => {
+    return users.filter(u => u.role === UserRole.CASHIER && (isAdmin || u.storeId === currentUser?.storeId));
+  }, [users, isAdmin, currentUser]);
 
   const filteredSessions = useMemo(() => {
     return cashSessions.filter(s => {
       const belongsToStore = isAdmin || s.storeId === currentUser?.storeId;
       const matchesFilter = filter === '' || 
-        s.registerName.toLowerCase().includes(filter.toLowerCase()) || 
-        s.openingOperatorName?.toLowerCase().includes(filter.toLowerCase());
+        s.registerName.toLowerCase().includes(filter.toLowerCase());
       return belongsToStore && matchesFilter;
     });
   }, [cashSessions, filter, isAdmin, currentUser]);
@@ -43,7 +45,7 @@ const CashMovement: React.FC = () => {
       openingOperatorName: currentUser?.name,
       openingValue: openingValue,
       status: CashSessionStatus.OPEN,
-      priceTable: 'Tabela Padrão de Vendas'
+      priceTable: 'Tabela Padrão' // Mantido internamente mas removido da UI
     };
 
     await saveCashSession(newSession);
@@ -56,12 +58,12 @@ const CashMovement: React.FC = () => {
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500 pb-24">
       
-      {/* CABEÇALHO ESTILO ERP TRADICIONAL */}
+      {/* CABEÇALHO ATUALIZADO */}
       <div className="bg-slate-50 dark:bg-slate-900/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight">19000 - Registro de Movimentação Diária do PDV - Visualizar</h2>
+          <h2 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Registro de Movimentação Diária do PDV</h2>
           <div className="flex gap-4 mt-2 text-[10px] font-black text-slate-400 uppercase">
-             <span>Unidade: {currentStore?.name || 'Não Informado'}</span>
+             <span>Unidade: {currentStore?.name || 'Carregando...'}</span>
              <span>Ref: {new Date().toLocaleDateString('pt-BR')}</span>
           </div>
         </div>
@@ -81,13 +83,13 @@ const CashMovement: React.FC = () => {
             <input 
               value={filter}
               onChange={e => setFilter(e.target.value)}
-              placeholder="FILTRAGEM RÁPIDA... <CTRL+*>" 
+              placeholder="BUSCAR MOVIMENTAÇÃO PELO NOME DO CAIXA..." 
               className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg pl-10 text-[10px] font-black uppercase focus:ring-1 focus:ring-primary/20 h-10" 
             />
          </div>
       </div>
 
-      {/* TABELA DE MOVIMENTAÇÕES */}
+      {/* TABELA DE MOVIMENTAÇÕES (COLUNAS REDUZIDAS) */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
          <div className="overflow-x-auto">
             <table className="w-full text-left text-[11px] font-bold">
@@ -95,10 +97,8 @@ const CashMovement: React.FC = () => {
                   <tr>
                      <th className="px-4 py-3 w-10 text-center"><span className="material-symbols-outlined text-sm">settings</span></th>
                      <th className="px-4 py-3">ID</th>
-                     <th className="px-4 py-3">Caixa</th>
-                     <th className="px-4 py-3">Tabela Preço</th>
+                     <th className="px-4 py-3">Terminal / Operador de Caixa</th>
                      <th className="px-4 py-3">Data/Hora Abertura</th>
-                     <th className="px-4 py-3">Operador Abertura</th>
                      <th className="px-4 py-3">Data/Hora Fechamento</th>
                      <th className="px-4 py-3">Operador Fechamento</th>
                      <th className="px-4 py-3 text-right">Opções</th>
@@ -112,9 +112,7 @@ const CashMovement: React.FC = () => {
                        </td>
                        <td className="px-4 py-3 font-mono text-slate-400">{session.id}</td>
                        <td className="px-4 py-3 uppercase text-slate-900 dark:text-white">{session.registerName}</td>
-                       <td className="px-4 py-3 uppercase text-slate-500">{session.priceTable}</td>
                        <td className="px-4 py-3 text-slate-400">{session.openingTime || '--:--'}</td>
-                       <td className="px-4 py-3 uppercase text-slate-400">{session.openingOperatorName || '---'}</td>
                        <td className="px-4 py-3 text-slate-400">{session.closingTime || '--:--'}</td>
                        <td className="px-4 py-3 uppercase text-slate-400">{session.closingOperatorName || '---'}</td>
                        <td className="px-4 py-3 text-right">
@@ -128,6 +126,11 @@ const CashMovement: React.FC = () => {
                        </td>
                     </tr>
                   ))}
+                  {filteredSessions.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-10 text-center opacity-30 font-black uppercase text-[10px] tracking-widest">Nenhuma movimentação para o filtro atual</td>
+                    </tr>
+                  )}
                </tbody>
             </table>
          </div>
@@ -135,16 +138,16 @@ const CashMovement: React.FC = () => {
 
       {/* RODAPÉ DE STATUS */}
       <div className="flex gap-4">
-         <div className="bg-white dark:bg-slate-900 px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-[9px] font-black uppercase">Qtd. de Registros: {filteredSessions.length}</div>
+         <div className="bg-white dark:bg-slate-900 px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-[9px] font-black uppercase">Registros: {filteredSessions.length}</div>
          <div className="bg-white dark:bg-slate-900 px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-lg flex gap-4 text-[9px] font-black uppercase">
-            <span>Status:</span>
-            <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-rose-500"></span> Abertura Pendente</div>
-            <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-500"></span> Aberto</div>
-            <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-blue-500"></span> Fechado</div>
+            <span>Legenda:</span>
+            <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-rose-500"></span> Pendente</div>
+            <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-500"></span> Operando</div>
+            <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-blue-500"></span> Finalizado</div>
          </div>
       </div>
 
-      {/* MODAL DE ABERTURA */}
+      {/* MODAL DE ABERTURA ATUALIZADO */}
       {showOpeningModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-300">
            <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95">
@@ -155,13 +158,18 @@ const CashMovement: React.FC = () => {
               <form onSubmit={handleOpenCash} className="p-8 space-y-6">
                  <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Unidade de Venda</label>
-                    <div className="w-full h-12 bg-slate-100 dark:bg-slate-800 rounded-xl px-4 flex items-center text-xs font-black uppercase text-slate-500">{currentStore?.name || 'Selecione'}</div>
+                    <div className="w-full h-12 bg-slate-100 dark:bg-slate-800 rounded-xl px-4 flex items-center text-xs font-black uppercase text-primary border border-primary/10">
+                       {currentStore?.name || 'Unidade não identificada'}
+                    </div>
                  </div>
                  <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Terminal de Caixa</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Selecionar Terminal de Caixa</label>
                     <select required value={selectedRegister} onChange={e => setSelectedRegister(e.target.value)} className="w-full h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl px-4 text-xs font-black uppercase">
-                       <option value="">Selecione o Terminal</option>
-                       {availableRegisters.map(r => <option key={r} value={r}>{r}</option>)}
+                       <option value="">Selecione o Operador...</option>
+                       {availableCashiers.map((u, idx) => (
+                         <option key={u.id} value={`Caixa ${idx + 1} - ${u.name}`}>Caixa {idx + 1} - {u.name}</option>
+                       ))}
+                       {availableCashiers.length === 0 && <option disabled>Nenhum Operador de Caixa cadastrado</option>}
                     </select>
                  </div>
                  <div className="space-y-1">
@@ -170,10 +178,10 @@ const CashMovement: React.FC = () => {
                  </div>
                  <div className="p-4 bg-primary/5 rounded-xl border border-dashed border-primary/20">
                     <p className="text-[10px] font-black uppercase text-primary tracking-widest">Informações de Sessão</p>
-                    <p className="text-[9px] font-bold text-slate-500 mt-1 uppercase">Operador: {currentUser?.name}</p>
-                    <p className="text-[9px] font-bold text-slate-500 uppercase">Tabela: Tabela Padrão</p>
+                    <p className="text-[9px] font-bold text-slate-500 mt-1 uppercase">Abertura por: {currentUser?.name}</p>
+                    <p className="text-[9px] font-bold text-slate-500 uppercase">Data: {new Date().toLocaleDateString('pt-BR')}</p>
                  </div>
-                 <button type="submit" className="w-full h-14 bg-primary text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl">Confirmar Abertura</button>
+                 <button type="submit" disabled={availableCashiers.length === 0} className="w-full h-14 bg-primary text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl disabled:opacity-30">Confirmar Abertura</button>
               </form>
            </div>
         </div>
