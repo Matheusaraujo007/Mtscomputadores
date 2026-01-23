@@ -47,6 +47,19 @@ export enum CashSessionStatus {
   CLOSED = 'FECHADO'
 }
 
+export interface CardOperator {
+  id: string;
+  name: string;
+  active: boolean;
+}
+
+export interface CardBrand {
+  id: string;
+  name: string;
+  operatorId: string;
+  active: boolean;
+}
+
 export interface CashSession {
   id: string;
   storeId: string;
@@ -97,6 +110,8 @@ export interface Transaction {
   installments?: number;
   authNumber?: string;
   transactionSku?: string;
+  cardOperatorId?: string;
+  cardBrandId?: string;
 }
 
 export interface User {

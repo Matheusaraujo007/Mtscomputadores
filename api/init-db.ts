@@ -12,7 +12,7 @@ export default async function handler(req: any, res: any) {
     await sql`CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE, password TEXT DEFAULT '123456', role TEXT NOT NULL, store_id TEXT, active BOOLEAN DEFAULT TRUE, avatar TEXT, commission_active BOOLEAN DEFAULT FALSE, commission_rate NUMERIC DEFAULT 0)`;
     await sql`CREATE TABLE IF NOT EXISTS establishments (id TEXT PRIMARY KEY, name TEXT NOT NULL, cnpj TEXT, location TEXT, has_stock_access BOOLEAN DEFAULT TRUE, active BOOLEAN DEFAULT TRUE, logo_url TEXT)`;
     await sql`CREATE TABLE IF NOT EXISTS products (id TEXT PRIMARY KEY, name TEXT NOT NULL, sku TEXT UNIQUE, barcode TEXT, category TEXT, cost_price NUMERIC, sale_price NUMERIC, stock INTEGER DEFAULT 0, image TEXT, brand TEXT, unit TEXT, location TEXT, is_service BOOLEAN DEFAULT FALSE)`;
-    await sql`CREATE TABLE IF NOT EXISTS transactions (id TEXT PRIMARY KEY, date TEXT, due_date TEXT, description TEXT, store TEXT, category TEXT, status TEXT, value NUMERIC, shipping_value NUMERIC DEFAULT 0, type TEXT, method TEXT, client TEXT, client_id TEXT, vendor_id TEXT, items JSONB, installments INTEGER, auth_number TEXT, transaction_sku TEXT)`;
+    await sql`CREATE TABLE IF NOT EXISTS transactions (id TEXT PRIMARY KEY, date TEXT, due_date TEXT, description TEXT, store TEXT, category TEXT, status TEXT, value NUMERIC, shipping_value NUMERIC DEFAULT 0, type TEXT, method TEXT, client TEXT, client_id TEXT, vendor_id TEXT, items JSONB, installments INTEGER, auth_number TEXT, transaction_sku TEXT, card_operator_id TEXT, card_brand_id TEXT)`;
     await sql`CREATE TABLE IF NOT EXISTS customers (id TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT, phone TEXT, birth_date TEXT, cpf_cnpj TEXT, zip_code TEXT, address TEXT, number TEXT, complement TEXT, neighborhood TEXT, city TEXT, state TEXT, notes TEXT)`;
     await sql`CREATE TABLE IF NOT EXISTS service_orders (id TEXT PRIMARY KEY, date TEXT NOT NULL, customer_id TEXT NOT NULL, customer_name TEXT NOT NULL, description TEXT NOT NULL, status TEXT NOT NULL, items JSONB NOT NULL, total_value NUMERIC NOT NULL, technician_name TEXT, expected_date TEXT, store TEXT NOT NULL)`;
     
@@ -34,17 +34,36 @@ export default async function handler(req: any, res: any) {
       price_table TEXT
     )`;
 
-    // Tabela de Lançamentos de Caixa (Movimentações internas da sessão)
+    // Tabela de Lançamentos de Caixa
     await sql`CREATE TABLE IF NOT EXISTS cash_entries (
       id TEXT PRIMARY KEY,
       session_id TEXT NOT NULL,
-      type TEXT NOT NULL, -- INCOME, EXPENSE, TRANSFER
+      type TEXT NOT NULL,
       category TEXT,
       description TEXT,
       value NUMERIC NOT NULL,
       timestamp TEXT NOT NULL,
       method TEXT
     )`;
+
+    // Tabela de Operadoras de Cartão
+    await sql`CREATE TABLE IF NOT EXISTS card_operators (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      active BOOLEAN DEFAULT TRUE
+    )`;
+
+    // Tabela de Bandeiras de Cartão
+    await sql`CREATE TABLE IF NOT EXISTS card_brands (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      operator_id TEXT NOT NULL,
+      active BOOLEAN DEFAULT TRUE
+    )`;
+
+    // Migração de colunas de cartão em transações caso não existam
+    try { await sql`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS card_operator_id TEXT`; } catch(e) {}
+    try { await sql`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS card_brand_id TEXT`; } catch(e) {}
 
     return res.status(200).json({ message: 'Banco de Dados Neon Sincronizado com Sucesso!' });
   } catch (error: any) {

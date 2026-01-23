@@ -15,11 +15,11 @@ import Customers from './views/Customers';
 import ServiceOrders from './views/ServiceOrders';
 import Login from './views/Login';
 import CashMovement from './views/CashMovement';
+import CardManagement from './views/CardManagement';
 
 const AppRoutes: React.FC = () => {
   const { currentUser, loading } = useApp();
 
-  // Exibe um carregamento inicial enquanto puxa os dados do banco
   if (loading) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-background-light dark:bg-background-dark">
@@ -31,7 +31,6 @@ const AppRoutes: React.FC = () => {
     );
   }
 
-  // Se NÃO houver usuário, as únicas rotas permitidas levam ao Login
   if (!currentUser) {
     return (
       <Routes>
@@ -41,7 +40,6 @@ const AppRoutes: React.FC = () => {
     );
   }
 
-  // Se HOUVER usuário, libera as rotas do ERP
   return (
     <Routes>
       <Route path="/" element={<Layout><Dashboard /></Layout>} />
@@ -54,9 +52,9 @@ const AppRoutes: React.FC = () => {
       <Route path="/servicos" element={<Layout><ServiceOrders /></Layout>} />
       <Route path="/entradas" element={<Layout><Transactions type="INCOME" /></Layout>} />
       <Route path="/saidas" element={<Layout><Transactions type="EXPENSE" /></Layout>} />
+      <Route path="/cartoes" element={<Layout><CardManagement /></Layout>} />
       <Route path="/dre" element={<Layout><DRE /></Layout>} />
       <Route path="/config" element={<Layout><Settings /></Layout>} />
-      {/* Redireciona o login para a home se o usuário já estiver logado */}
       <Route path="/login" element={<Navigate to="/" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

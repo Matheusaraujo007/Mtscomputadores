@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import { Product, Transaction, TransactionStatus, Customer, User, CartItem, Establishment, UserRole, RolePermissions, ServiceOrder, ServiceOrderStatus, CashSession, CashSessionStatus } from './types';
+import { Product, Transaction, TransactionStatus, Customer, User, CartItem, Establishment, UserRole, RolePermissions, ServiceOrder, ServiceOrderStatus, CashSession, CashSessionStatus, CardOperator, CardBrand } from './types';
 
 export interface CashEntry {
   id: string;
@@ -33,6 +33,8 @@ interface AppContextType {
   establishments: Establishment[];
   cashSessions: CashSession[];
   cashEntries: CashEntry[];
+  cardOperators: CardOperator[];
+  cardBrands: CardBrand[];
   loading: boolean;
   login: (username: string, pass: string) => Promise<boolean>;
   logout: () => void;
@@ -52,7 +54,11 @@ interface AppContextType {
   deleteEstablishment: (id: string) => Promise<void>;
   saveCashSession: (s: CashSession) => Promise<void>;
   addCashEntry: (e: CashEntry) => Promise<void>;
-  processSale: (items: CartItem[], total: number, method: string, clientId?: string, vendorId?: string, shippingValue?: number, cardDetails?: { installments?: number; authNumber?: string; transactionSku?: string }) => Promise<void>;
+  saveCardOperator: (o: CardOperator) => Promise<void>;
+  deleteCardOperator: (id: string) => Promise<void>;
+  saveCardBrand: (b: CardBrand) => Promise<void>;
+  deleteCardBrand: (id: string) => Promise<void>;
+  processSale: (items: CartItem[], total: number, method: string, clientId?: string, vendorId?: string, shippingValue?: number, cardDetails?: { installments?: number; authNumber?: string; transactionSku?: string; cardOperatorId?: string; cardBrandId?: string }) => Promise<void>;
   updateStock: (productId: string, quantity: number) => Promise<void>;
   bulkUpdateStock: (adjustments: Record<string, number>) => Promise<void>;
   refreshData: () => Promise<void>;
@@ -69,7 +75,7 @@ const INITIAL_PERMS: Record<UserRole, RolePermissions> = {
 
 const SESSION_KEY = 'tem_acessorios_user_session';
 const LAST_ACTIVITY_KEY = 'tem_acessorios_last_activity';
-const INACTIVITY_LIMIT = 60 * 60 * 1000; // 1 hora em milissegundos
+const INACTIVITY_LIMIT = 60 * 60 * 1000;
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -77,6 +83,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
   const [cashSessions, setCashSessions] = useState<CashSession[]>([]);
   const [cashEntries, setCashEntries] = useState<CashEntry[]>([]);
+  const [cardOperators, setCardOperators] = useState<CardOperator[]>([]);
+  const [cardBrands, setCardBrands] = useState<CardBrand[]>([]);
   const [systemConfig, setSystemConfig] = useState<SystemConfig>({
     companyName: 'Retail Cloud ERP', logoUrl: '', taxRegime: 'Simples Nacional', allowNegativeStock: false, returnPeriodDays: 30
   });
@@ -105,6 +113,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         fetch('/api/service-orders').then(r => r.json()).catch(() => []),
         fetch('/api/cash-sessions').then(r => r.json()).catch(() => []),
         fetch('/api/cash-entries').then(r => r.json()).catch(() => []),
+        fetch('/api/card-operators').then(r => r.json()).catch(() => []),
+        fetch('/api/card-brands').then(r => r.json()).catch(() => []),
         fetch('/api/config').then(r => r.ok ? r.json() : null).catch(() => null),
         fetch('/api/permissions').then(r => r.ok ? r.json() : null).catch(() => null)
       ]);
@@ -117,11 +127,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setServiceOrders(responses[5]);
       setCashSessions(responses[6]);
       setCashEntries(responses[7]);
+      setCardOperators(responses[8]);
+      setCardBrands(responses[9]);
       
-      if (responses[8]) setSystemConfig(responses[8]);
-      if (responses[9] && Array.isArray(responses[9])) {
+      if (responses[10]) setSystemConfig(responses[10]);
+      if (responses[11] && Array.isArray(responses[11])) {
         const permsMap = { ...INITIAL_PERMS };
-        responses[9].forEach((p: any) => { permsMap[p.role as UserRole] = p.permissions; });
+        responses[11].forEach((p: any) => { permsMap[p.role as UserRole] = p.permissions; });
         setRolePermissions(permsMap);
       }
 
@@ -160,15 +172,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const addServiceOrder = async (os: ServiceOrder) => { await fetch('/api/service-orders', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(os)}); await refreshData(); };
   const updateServiceOrder = async (os: ServiceOrder) => { await addServiceOrder(os); };
   
-  const saveCashSession = async (s: CashSession) => {
-    await fetch('/api/cash-sessions', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(s)});
-    await refreshData();
-  };
+  const saveCashSession = async (s: CashSession) => { await fetch('/api/cash-sessions', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(s)}); await refreshData(); };
+  const addCashEntry = async (e: CashEntry) => { await fetch('/api/cash-entries', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(e)}); await refreshData(); };
 
-  const addCashEntry = async (e: CashEntry) => {
-    await fetch('/api/cash-entries', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(e)});
-    await refreshData();
-  };
+  const saveCardOperator = async (o: CardOperator) => { await fetch('/api/card-operators', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(o)}); await refreshData(); };
+  const deleteCardOperator = async (id: string) => { await fetch(`/api/card-operators?id=${id}`, { method: 'DELETE' }); await refreshData(); };
+  const saveCardBrand = async (b: CardBrand) => { await fetch('/api/card-brands', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(b)}); await refreshData(); };
+  const deleteCardBrand = async (id: string) => { await fetch(`/api/card-brands?id=${id}`, { method: 'DELETE' }); await refreshData(); };
 
   const processSale = async (items: CartItem[], total: number, method: string, clientId?: string, vendorId?: string, shippingValue: number = 0, cardDetails?: any) => {
     const stockUpdates = items
@@ -236,9 +246,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   return (
     <AppContext.Provider value={{ 
-      currentUser, systemConfig, rolePermissions, products, transactions, customers, users, serviceOrders, establishments, cashSessions, cashEntries, loading, login, logout, 
+      currentUser, systemConfig, rolePermissions, products, transactions, customers, users, serviceOrders, establishments, cashSessions, cashEntries, cardOperators, cardBrands, loading, login, logout, 
       addProduct, updateProduct: addProduct, deleteProduct: async (id) => {}, addTransaction, addCustomer, addUser, updateSelf: addUser, addServiceOrder, updateServiceOrder,
       deleteUser: async (id) => {}, addEstablishment, deleteEstablishment: async (id) => {}, processSale, updateStock: async (id, q) => {}, bulkUpdateStock, refreshData, saveCashSession, addCashEntry,
+      saveCardOperator, deleteCardOperator, saveCardBrand, deleteCardBrand,
       updateConfig: async (conf) => { await fetch('/api/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(conf)}); refreshData(); }, 
       updateRolePermissions: async (role, perms) => { await fetch('/api/permissions', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({role, permissions: perms})}); refreshData(); }
     }}>

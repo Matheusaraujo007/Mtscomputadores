@@ -15,7 +15,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isStockOpen, setIsStockOpen] = useState(location.pathname.includes('estoque') || location.pathname.includes('balanco'));
   const [isVendasOpen, setIsVendasOpen] = useState(location.pathname.includes('pdv') || location.pathname.includes('clientes') || location.pathname.includes('relatorios') || location.pathname.includes('caixa'));
   const [isReportsMenuOpen, setIsReportsMenuOpen] = useState(location.pathname.includes('relatorios'));
-  const [isFinancialOpen, setIsFinancialOpen] = useState(location.pathname.includes('entradas') || location.pathname.includes('saidas') || location.pathname.includes('dre'));
+  const [isFinancialOpen, setIsFinancialOpen] = useState(location.pathname.includes('entradas') || location.pathname.includes('saidas') || location.pathname.includes('dre') || location.pathname.includes('cartoes'));
   const [isOSOpen, setIsOSOpen] = useState(location.pathname.includes('servicos'));
 
   useEffect(() => {
@@ -152,6 +152,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <div className="flex flex-col ml-9 mt-1 border-l border-slate-100 dark:border-slate-800 gap-1">
                     {perms.incomes && <SidebarSubItem to="/entradas" label="Receitas" />}
                     {perms.expenses && <SidebarSubItem to="/saidas" label="Despesas" />}
+                    <SidebarSubItem to="/cartoes" label="Operadoras / Bandeiras" />
                     {perms.financial && <SidebarSubItem to="/dre" label="DRE" />}
                   </div>
                 )}
